@@ -1,6 +1,17 @@
+import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Import Shaders as raw text via Vite raw queries
+import distortionVert from './shaders/distortion.vert?raw';
+import distortionFrag from './shaders/distortion.frag?raw';
+import chromeWarpVert from './shaders/chromeWarp.vert?raw';
+import chromeWarpFrag from './shaders/chromeWarp.frag?raw';
+import fluidFlowFrag from './shaders/fluidFlow.frag?raw';
 
 // Register GSAP ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
@@ -10,9 +21,9 @@ gsap.registerPlugin(ScrollTrigger);
 // ==========================================
 const AppState = {
   assetsLoaded: false,
-  mouse: { x: 0, y: 0 },
-  mousePrev: { x: 0, y: 0 },
-  mouseVelocity: { x: 0, y: 0, length: 0 },
+  mouse: new THREE.Vector2(),
+  mousePrev: new THREE.Vector2(),
+  mouseVelocity: new THREE.Vector2(),
   scrollVelocity: 0,
   perceptionState: 'sober', // sober | intoxicated | hangover
   time: 0
@@ -24,18 +35,16 @@ window.addEventListener('mousemove', (e) => {
   const now = performance.now();
   const dt = Math.max(now - lastMouseMoveTime, 1); // Avoid division by zero
   
-  AppState.mouse.x = e.clientX;
-  AppState.mouse.y = e.clientY;
+  // Normalize mouse: -1 to +1
+  AppState.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  AppState.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   
+  // Calculate pixel velocity for physics
   const dx = e.clientX - AppState.mousePrev.x;
   const dy = e.clientY - AppState.mousePrev.y;
+  AppState.mouseVelocity.set(dx / dt, dy / dt);
   
-  AppState.mouseVelocity.x = dx / dt;
-  AppState.mouseVelocity.y = dy / dt;
-  AppState.mouseVelocity.length = Math.sqrt(dx*dx + dy*dy) / dt;
-  
-  AppState.mousePrev.x = e.clientX;
-  AppState.mousePrev.y = e.clientY;
+  AppState.mousePrev.set(e.clientX, e.clientY);
   lastMouseMoveTime = now;
 });
 
@@ -121,10 +130,255 @@ function runPreloaderSimulation() {
 runPreloaderSimulation();
 
 // ==========================================
-// 4. GSAP PARALLAX HERO SCROLL TIMELINE
+// 4. MAIN THREE.JS 3D TRANSPARENT PIPELINE
+// ==========================================
+const container3D = document.getElementById('webgl-canvas-container');
+const scene = new THREE.Scene();
+
+// Camera setup
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 1.2, 5);
+
+// WebGLRenderer with alpha transparent settings
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+container3D.appendChild(renderer.domElement);
+
+// Lights setup (Volt spotlight and point light reflections overlaying image)
+const ambientLight = new THREE.AmbientLight(0xFAF9F6, 0.1);
+scene.add(ambientLight);
+
+const spotLight = new THREE.SpotLight(0xD4FF00, 15);
+spotLight.position.set(1.5, 6.0, 3.5);
+spotLight.angle = 0.22;
+spotLight.penumbra = 0.9;
+scene.add(spotLight);
+
+const pointLight = new THREE.PointLight(0x1C162E, 8, 15);
+pointLight.position.set(-2, -1.0, 1.5);
+scene.add(pointLight);
+
+// ==========================================
+// 5. LIQUID CHROME TYPOGRAPHY ("CHITH STUDIOS")
+// ==========================================
+const logoGlassMesh = new THREE.Group();
+const chromeMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0.0 },
+    uMouseVelocity: { value: new THREE.Vector2(0, 0) },
+    uSolidifyProgress: { value: 0.0 }
+  },
+  vertexShader: chromeWarpVert,
+  fragmentShader: chromeWarpFrag,
+  transparent: true,
+  depthWrite: true
+});
+
+function createBrutalistLetters() {
+  const blockGeo = new THREE.BoxGeometry(0.04, 0.04, 0.04);
+  
+  const lettersGrid = {
+    'C': [
+      [1,1,1],
+      [1,0,0],
+      [1,0,0],
+      [1,0,0],
+      [1,1,1]
+    ],
+    'H': [
+      [1,0,1],
+      [1,0,1],
+      [1,1,1],
+      [1,0,1],
+      [1,0,1]
+    ],
+    'I': [
+      [1,1,1],
+      [0,1,0],
+      [0,1,0],
+      [0,1,0],
+      [1,1,1]
+    ],
+    'T': [
+      [1,1,1],
+      [0,1,0],
+      [0,1,0],
+      [0,1,0],
+      [0,1,0]
+    ],
+    'S': [
+      [1,1,1],
+      [1,0,0],
+      [1,1,1],
+      [0,0,1],
+      [1,1,1]
+    ],
+    'U': [
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,1]
+    ],
+    'D': [
+      [1,1,0],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,0]
+    ],
+    'O': [
+      [1,1,1],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,1]
+    ]
+  };
+
+  const word = ['C', 'H', 'I', 'T', 'H', 'space', 'S', 'T', 'U', 'D', 'I', 'O', 'S'];
+  const letterSpacing = 0.23; // Tightly tracked
+  const startX = -((word.length - 1) * letterSpacing) / 2;
+
+  word.forEach((char, letterIdx) => {
+    if (char === 'space') return;
+    const grid = lettersGrid[char];
+    const xOffset = startX + letterIdx * letterSpacing;
+
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (grid[r][c] === 1) {
+          const block = new THREE.Mesh(blockGeo, chromeMaterial);
+          block.scale.set(0.9, 0.9, 0.9);
+          block.position.set(
+            xOffset + (c - 1) * 0.04,
+            0.55 - (r - 2) * 0.04, // center spacing offset
+            0
+          );
+          logoGlassMesh.add(block);
+        }
+      }
+    }
+  });
+}
+
+createBrutalistLetters();
+// Placed slightly above center height
+logoGlassMesh.position.set(0, 0.65, 0.1);
+logoGlassMesh.scale.set(0.001, 0.001, 0.001);
+scene.add(logoGlassMesh);
+
+// ==========================================
+// 6. VISCOUS NEON FLUID RIBBONS (SPLINES)
+// ==========================================
+const fluidGroup = new THREE.Group();
+const fluidMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0.0 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: fluidFlowFrag,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide
+});
+
+const splinesCount = 3;
+const ribbonMeshes = [];
+for (let s = 0; s < splinesCount; s++) {
+  const points = [];
+  const pointsCount = 40;
+  const radius = 0.055;
+  
+  for (let i = 0; i < pointsCount; i++) {
+    const t = i / (pointsCount - 1);
+    const angle = t * Math.PI * 4.5 + s * (Math.PI * 2.0 / 3.0);
+    // Winding path rising upwards from melted slat center
+    const px = Math.sin(angle) * (0.05 + t * 0.7);
+    const py = -0.1 + t * 4.0;
+    const pz = Math.cos(angle) * (0.05 + t * 0.7) + (t * 0.2);
+    
+    points.push(new THREE.Vector3(px, py, pz));
+  }
+  
+  const curve = new THREE.CatmullRomCurve3(points);
+  const tubeGeo = new THREE.TubeGeometry(curve, 64, radius, 8, false);
+  const tubeMesh = new THREE.Mesh(tubeGeo, fluidMaterial);
+  tubeMesh.scale.set(0.001, 0.001, 0.001);
+  fluidGroup.add(tubeMesh);
+  ribbonMeshes.push(tubeMesh);
+}
+scene.add(fluidGroup);
+
+// ==========================================
+// 7. FLOATING NEON CURSORS
+// ==========================================
+const cursorGroup = new THREE.Group();
+const cursorGeo = new THREE.BufferGeometry();
+const cursorVertices = new Float32Array([
+  0.0, 0.0, 0.0,
+  0.08, -0.16, 0.0,
+  0.02, -0.13, 0.0,
+  0.02, -0.13, 0.0,
+  0.08, -0.16, 0.0,
+  0.0, -0.20, 0.0
+]);
+cursorGeo.setAttribute('position', new THREE.BufferAttribute(cursorVertices, 3));
+const cursorMat = new THREE.MeshBasicMaterial({ color: 0xD4FF00, side: THREE.DoubleSide });
+
+const cursorsList = [];
+for (let i = 0; i < 4; i++) {
+  const cMesh = new THREE.Mesh(cursorGeo, cursorMat);
+  cMesh.scale.set(0.7, 0.7, 0.7);
+  const rx = (Math.random() - 0.5) * 3.5;
+  const ry = -0.2 + (Math.random() - 0.5) * 1.5;
+  const rz = 0.5 + (Math.random() - 0.5) * 1.0;
+  cMesh.position.set(rx, ry, rz);
+  cMesh.rotation.z = -0.3 + Math.random() * 0.6;
+  
+  cursorGroup.add(cMesh);
+  cursorsList.push({
+    mesh: cMesh,
+    baseX: rx,
+    baseY: ry,
+    baseZ: rz,
+    speed: 0.6 + Math.random() * 0.8
+  });
+}
+scene.add(cursorGroup);
+
+// ==========================================
+// 8. EFFECT COMPOSER (POST-PROCESSING)
+// ==========================================
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// Link post-processing to global velocity parameters
+const distortionPass = new ShaderPass({
+  uniforms: {
+    tDiffuse: { value: null },
+    uScrollVelocity: { value: 0 },
+    uTime: { value: 0 }
+  },
+  vertexShader: distortionVert,
+  fragmentShader: distortionFrag
+});
+composer.addPass(distortionPass);
+
+// ==========================================
+// 9. GSAP SCROLL TIMELINE
 // ==========================================
 const bgImage = document.getElementById('hero-cinematic-bg');
-const monumentalHeader = document.getElementById('monumental-header-layer');
 const manifestoTrigger = document.getElementById('manifesto-trigger-layer');
 
 const heroTimeline = gsap.timeline({
@@ -137,35 +391,47 @@ const heroTimeline = gsap.timeline({
   }
 });
 
-// Segment 1: Parallax zoom-out cinematic background image (0% -> 50% scroll)
-heroTimeline.to(bgImage, { scale: 1.0, opacity: 0.85, ease: "none" }, 0);
+// Segment 1: Parallax scale visual background + WebGL camera zoom & fluid ribbon growth (0% -> 40%)
+heroTimeline.to(bgImage, { scale: 1.0, opacity: 0.85, ease: "none" }, 0)
+            .to(camera.position, { x: 0.0, y: 1.8, z: 4.0, ease: "power1.inOut" }, 0)
+            .to(ribbonMeshes.map(m => m.scale), { x: 1.0, y: 1.0, z: 1.0, ease: "power2.inOut" }, 0);
 
-// Segment 2: Monumental typography text fade in (40% -> 80% scroll)
-heroTimeline.to(monumentalHeader, { opacity: 0.95, y: -20, ease: "power1.out" }, 0.4);
+// Segment 2: Fluid loops converge, camera ascends, chrome logo solidifies (40% -> 80%)
+heroTimeline.to(camera.position, { y: 4.2, z: 2.5, ease: "power1.inOut" }, 1)
+            .to(chromeMaterial.uniforms.uSolidifyProgress, { value: 1.0, ease: "power2.out" }, 1)
+            .to(logoGlassMesh.scale, { x: 1.35, y: 1.35, z: 1.35, ease: "power2.out" }, 1);
 
-// Segment 3: Manifesto text reveal (80% -> 100% scroll)
-heroTimeline.to(manifestoTrigger, { opacity: 1, y: 0, ease: "power2.out" }, 0.8);
+// Segment 3: Settle logo rotation & show scroll overlays (80% -> 100%)
+heroTimeline.to(logoGlassMesh.rotation, { y: Math.PI * 2, ease: "power2.inOut" }, 2)
+            .to(manifestoTrigger, { opacity: 1, y: 0, ease: "power2.out" }, 2);
 
 // ==========================================
-// 5. INTERACTIVE SVG WAVEFORM DRAWING
+// 10. INTERACTIVE SVG WAVEFORM DRAWING
 // ==========================================
 const wavePath = document.getElementById('waveform-path');
 const wavePointsCount = 60;
 const waveWidth = 1000;
-const waveHeight = 200;
+
+lenis.on('scroll', (e) => {
+  AppState.scrollVelocity = e.velocity;
+  
+  // Stretch post-processing aberration on velocity spikes
+  gsap.to(distortionPass.uniforms.uScrollVelocity, {
+    value: Math.min(Math.abs(AppState.scrollVelocity) * 0.05, 0.4),
+    duration: 0.3,
+    ease: "power2.out"
+  });
+});
 
 function drawWaveform(time, speed) {
   let pathD = `M 0 100 `;
-  // Amplitude linked directly to user velocity
   const amplitude = 12.0 + speed * 120.0;
   
   for (let i = 0; i <= wavePointsCount; i++) {
     const t = i / wavePointsCount;
     const x = t * waveWidth;
-    
-    // Waveform equation: sine wave with Gaussian envelope shaping
     const envelope = Math.exp(-Math.pow(t - 0.5, 2) / 0.05);
-    const wave1 = Math.sin(t * 35.0 - time * 6.0) * cos(t * 12.0);
+    const wave1 = Math.sin(t * 35.0 - time * 6.0) * Math.cos(t * 12.0);
     const wave2 = Math.sin(t * 70.0 - time * 12.0) * 0.4;
     const y = 100 + (wave1 + wave2) * amplitude * envelope;
     
@@ -176,7 +442,7 @@ function drawWaveform(time, speed) {
 }
 
 // ==========================================
-// 6. ALTERED PERCEPTION SVG TURBULENCE ENGINE
+// 11. ALTERED PERCEPTION SVG TURBULENCE ENGINE
 // ==========================================
 const displacementMap = document.getElementById('displacement-map');
 const distortElements = [
@@ -195,10 +461,9 @@ let currentMapScale = 0;
 let currentBaseFreq = 0.01;
 
 function checkPerceptionState() {
-  const mouseSpeed = AppState.mouseVelocity.length;
+  const mouseSpeed = AppState.mouseVelocity.length();
   const scrollSpeed = Math.abs(AppState.scrollVelocity);
   
-  // Intoxicated trigger (mouse speed > 0.6px/ms or scroll speed > 25)
   if (mouseSpeed > 0.6 || scrollSpeed > 25.0) {
     if (AppState.perceptionState !== 'intoxicated') {
       AppState.perceptionState = 'intoxicated';
@@ -210,13 +475,10 @@ function checkPerceptionState() {
     
     targetShear = AppState.mouseVelocity.x * 12.0;
     targetScale = 1.05 + (scrollSpeed * 0.002);
-    
-    // Heavy SVG displacement liquid warp values
     targetMapScale = Math.min(15 + (mouseSpeed * 45), 75);
     targetBaseFreq = 0.02 + (mouseSpeed * 0.05);
     
   } else {
-    // Recovery (Hangover state)
     if (AppState.perceptionState === 'intoxicated') {
       AppState.perceptionState = 'hangover';
       
@@ -241,7 +503,6 @@ function checkPerceptionState() {
   }
 }
 
-// Interpolate perception variables and bind to DOM SVG element attributes
 function updatePerceptionDOM() {
   const lerpFactor = AppState.perceptionState === 'intoxicated' ? 0.35 : 0.08;
   
@@ -263,7 +524,6 @@ function updatePerceptionDOM() {
     }
   });
   
-  // Update displacement mapping SVG attributes directly
   if (displacementMap) {
     displacementMap.setAttribute('scale', String(Math.round(currentMapScale)));
     const filterTurbulence = displacementMap.previousElementSibling;
@@ -274,7 +534,7 @@ function updatePerceptionDOM() {
 }
 
 // ==========================================
-// 7. RIGHT COLUMN 2D CANVAS PIXEL-SHREDDER
+// 12. RIGHT COLUMN 2D CANVAS PIXEL-SHREDDER
 // ==========================================
 const shredderCanvas = document.getElementById('pixel-shredder-canvas');
 const shredderCtx = shredderCanvas.getContext('2d', { willReadFrequently: true });
@@ -302,14 +562,12 @@ function drawVectorArtwork(ctx, velocity) {
   ctx.lineTo(canvasSize / 2, canvasSize / 2 + 20);
   ctx.stroke();
   
-  // Viewfinder circles
   ctx.strokeStyle = 'rgba(250, 249, 246, 0.2)';
   ctx.beginPath();
   ctx.arc(canvasSize / 2, canvasSize / 2, 100, 0, Math.PI * 2);
   ctx.arc(canvasSize / 2, canvasSize / 2, 150, 0, Math.PI * 2);
   ctx.stroke();
   
-  // Camera bounds
   ctx.strokeStyle = '#D4FF00';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -367,12 +625,13 @@ function applyPixelShredFilter(ctx, velocity) {
 }
 
 function updateShredderCanvas() {
-  drawVectorArtwork(shredderCtx, AppState.mouseVelocity.length);
-  applyPixelShredFilter(shredderCtx, AppState.mouseVelocity.length);
+  const speed = AppState.mouseVelocity.length();
+  drawVectorArtwork(shredderCtx, speed);
+  applyPixelShredFilter(shredderCtx, speed);
 }
 
 // ==========================================
-// 8. FRAME 6: LIQUID FOOTER PHYSICS
+// 13. FRAME 6: LIQUID FOOTER PHYSICS
 // ==========================================
 const footerCanvas = document.getElementById('footer-liquid-canvas');
 const footerCtx = footerCanvas.getContext('2d');
@@ -432,7 +691,7 @@ footerCanvas.addEventListener('mouseleave', () => {
 
 function drawFooterPhysics() {
   footerCtx.clearRect(0, 0, footerCanvas.width, footerCanvas.height);
-  const pushMultiplier = Math.max(AppState.mouseVelocity.length * 1.5, 0.4);
+  const pushMultiplier = Math.max(AppState.mouseVelocity.length() * 1.5, 0.4);
   
   footerCtx.fillStyle = '#D4FF00';
   
@@ -462,15 +721,19 @@ function drawFooterPhysics() {
   }
 }
 
-// Window resizing
 window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  
   initFooterCanvas();
 });
 
 setTimeout(initFooterCanvas, 500);
 
 // ==========================================
-// 9. ANIMATION LOOP
+// 14. ANIMATION GRAPHICS LOOP
 // ==========================================
 const clock = new THREE.Clock();
 
@@ -480,8 +743,31 @@ function animate() {
   const delta = clock.getDelta();
   AppState.time += delta;
   
-  // Render waveform and calculate velocity updates
-  drawWaveform(AppState.time, AppState.mouseVelocity.length);
+  // Pipe parameters to shaders uniforms
+  distortionPass.uniforms.uTime.value = AppState.time;
+  chromeMaterial.uniforms.uTime.value = AppState.time;
+  chromeMaterial.uniforms.uMouseVelocity.value.copy(AppState.mouseVelocity);
+  fluidMaterial.uniforms.uTime.value = AppState.time;
+  
+  // Drift cursors slowly
+  cursorsList.forEach((c) => {
+    c.mesh.position.x = c.baseX + Math.sin(AppState.time * c.speed) * 0.15;
+    c.mesh.position.y = c.baseY + Math.cos(AppState.time * c.speed) * 0.15;
+  });
+  
+  // WebGL off-screen culling checks
+  const heroPinHeight = window.innerHeight * 3;
+  const currentScroll = lenis.scroll;
+  
+  if (currentScroll < heroPinHeight + window.innerHeight) {
+    if (AppState.assetsLoaded) {
+      // Slow float ribbons rotation
+      fluidGroup.rotation.y = Math.sin(AppState.time * 0.3) * 0.03;
+      composer.render();
+    }
+  }
+  
+  drawWaveform(AppState.time, AppState.mouseVelocity.length());
   
   checkPerceptionState();
   updatePerceptionDOM();
@@ -491,3 +777,12 @@ function animate() {
 }
 
 animate();
+
+// ==========================================
+// 15. GPU CONTEXT LOST FALLBACKS
+// ==========================================
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  AppState.assetsLoaded = false;
+  container3D.style.display = 'none';
+}, false);

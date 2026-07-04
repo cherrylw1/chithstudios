@@ -76,11 +76,14 @@
 
   <!-- Pinned fullscreen cinematic visual background container -->
   <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-chithVoid" id="hero-cinematic-container">
-    <img src="/src/assets/hero-bg.png" alt="Chith Studios Hero" class="w-full h-full object-cover scale-[1.15] opacity-90" id="hero-cinematic-bg" />
+    <img src="/src/assets/hero-bg.png" alt="Chith Studios Hero" class="w-full h-full object-cover object-top origin-top scale-[1.15] opacity-90" id="hero-cinematic-bg" />
   </div>
 
+  <!-- Persistent Fullscreen WebGL Canvas Layer (overlaying background image, under content) -->
+  <div class="fixed inset-0 z-10 pointer-events-none" id="webgl-canvas-container"></div>
+
   <!-- Smooth scroll content container managed by Lenis -->
-  <div id="smooth-scroll-wrapper" class="relative z-10 w-full overflow-y-auto">
+  <div id="smooth-scroll-wrapper" class="relative z-20 w-full overflow-y-auto">
     
     <!-- Frame 2 & 3: Pinned Hero Container (300vh) -->
     <section id="hero-3d-pin-container" class="relative w-full h-[300vh] flex flex-col justify-end">
@@ -90,13 +93,6 @@
         <svg class="w-full h-48 opacity-80" viewBox="0 0 1000 200" preserveAspectRatio="none" id="waveform-svg-element">
           <path d="M 0 100 Q 250 100, 500 100 T 1000 100" fill="none" stroke="#D4FF00" stroke-width="1.5" id="waveform-path" />
         </svg>
-      </div>
-
-      <!-- Monumental Typography Display Header (Awwwards-grade, heavy grotesque, tight-tracked) -->
-      <div id="monumental-header-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-0 select-none">
-        <h1 class="font-brutal-header text-6xl md:text-[12vw] tracking-tighter leading-[0.85] text-center text-chithBone blend-chrome">
-          CHITH STUDIOS
-        </h1>
       </div>
 
       <!-- Trigger Content Layer Layer -->
