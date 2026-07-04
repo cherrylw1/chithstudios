@@ -142,6 +142,7 @@ camera.position.set(0, 1.2, 5);
 // WebGLRenderer with alpha transparent settings
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 0);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
@@ -359,7 +360,14 @@ scene.add(cursorGroup);
 // ==========================================
 // 8. EFFECT COMPOSER (POST-PROCESSING)
 // ==========================================
-const composer = new EffectComposer(renderer);
+const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+const renderTarget = new THREE.WebGLRenderTarget(size.width, size.height, {
+  minFilter: THREE.LinearFilter,
+  magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat,
+  type: THREE.UnsignedByteType
+});
+const composer = new EffectComposer(renderer, renderTarget);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
