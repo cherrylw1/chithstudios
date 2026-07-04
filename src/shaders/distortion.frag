@@ -14,10 +14,16 @@ void main() {
     float gChannel = texture2D(tDiffuse, uv).g;  
     float bChannel = texture2D(tDiffuse, uv - distortionOffset).b;  
       
-    // Add subtle, high-frequency late-night cinema grain emulation  
-    float grain = fract(sin(dot(uv ,vec2(12.9898,78.233))) * 43758.5453);  
     vec3 finalColor = vec3(rChannel, gChannel, bChannel);  
-    finalColor += vec3(grain * 0.035);  
+      
+    // Add dynamic, high-frequency moving cinema grain emulation
+    float grain = fract(sin(dot(uv * (fract(uTime * 0.01) + 1.0), vec2(12.9898, 78.233))) * 43758.5453);  
+    finalColor += vec3((grain - 0.5) * 0.07); // Dynamic grain offset
+    
+    // Apply subtle dark vignette edges mapping to void color
+    float dist = distance(uv, vec2(0.5));
+    float vignette = smoothstep(0.85, 0.4, dist);
+    finalColor = mix(vec3(0.039, 0.043, 0.055), finalColor, vignette); // Fade to chithVoid (#0A0B0E)
       
     gl_FragColor = vec4(finalColor, 1.0);  
 }

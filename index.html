@@ -11,12 +11,12 @@
   <!-- Kinetic Grain Overlay -->
   <div class="cinema-grain" id="grain-overlay"></div>
 
-  <!-- Camera Viewport Framing Guide Overlay -->
-  <div class="fixed inset-0 pointer-events-none z-50 flex flex-col justify-between p-4 md:p-8 camera-framing-border m-4 md:m-8">
+  <!-- Camera Viewport Framing Guide Overlay (Subdued to 25% opacity, microscopic 9px) -->
+  <div class="fixed inset-0 pointer-events-none z-50 flex flex-col justify-between p-4 md:p-8 camera-framing-border m-4 md:m-8 opacity-25">
     <!-- Top Row Camera Guides -->
-    <div class="flex justify-between items-start font-mono-metric text-xs uppercase">
-      <div class="flex items-center gap-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-chithVolt animate-ping"></span>
+    <div class="flex justify-between items-start font-mono-metric text-[9px] uppercase tracking-widest text-chithBone">
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-chithVolt animate-ping"></span>
         <span>REC [•]</span>
       </div>
       <div>35MM ANAMORPHIC</div>
@@ -25,12 +25,12 @@
     
     <!-- Crosshairs & Grid Intersections -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div class="w-6 h-px camera-guide-line"></div>
-      <div class="h-6 w-px camera-guide-line absolute"></div>
+      <div class="w-4 h-px camera-guide-line"></div>
+      <div class="h-4 w-px camera-guide-line absolute"></div>
     </div>
 
     <!-- Bottom Row Camera Guides -->
-    <div class="flex justify-between items-end font-mono-metric text-xs uppercase">
+    <div class="flex justify-between items-end font-mono-metric text-[9px] uppercase tracking-widest text-chithBone">
       <div>FPS 24.00</div>
       <div>SHUTTER 180°</div>
       <div>ISO 800</div>
@@ -72,6 +72,13 @@
     
     <!-- Frame 2 & 3: Pinned Hero 3D Environment Container (300vh) -->
     <section id="hero-3d-pin-container" class="relative w-full h-[300vh] flex flex-col justify-end">
+      <!-- Monumental Typography Display Header (Awwwards-grade, heavy grotesque, tight-tracked) -->
+      <div id="monumental-header-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-0 select-none">
+        <h1 class="font-brutal-header text-6xl md:text-[12vw] tracking-tighter leading-[0.85] text-center text-chithBone">
+          CHITH STUDIOS
+        </h1>
+      </div>
+
       <!-- Trigger Content Layer Layer -->
       <div id="manifesto-trigger-layer" class="absolute bottom-0 left-0 w-full p-8 md:p-24 pb-[20vh] opacity-0 translate-y-[30px] transition-all duration-700 pointer-events-none">
         <div class="max-w-3xl">
