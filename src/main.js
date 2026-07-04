@@ -9,8 +9,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Import Shaders as raw text via Vite raw queries
 import distortionVert from './shaders/distortion.vert?raw';
 import distortionFrag from './shaders/distortion.frag?raw';
-import glassWarpVert from './shaders/glassWarp.vert?raw';
-import glassWarpFrag from './shaders/glassWarp.frag?raw';
+import chromeWarpVert from './shaders/chromeWarp.vert?raw';
+import chromeWarpFrag from './shaders/chromeWarp.frag?raw';
+import fluidFlowFrag from './shaders/fluidFlow.frag?raw';
 
 // Register GSAP ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
@@ -235,9 +236,9 @@ container3D.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xFAF9F6, 0.05); // Subdued Alabaster Bone ambient
 scene.add(ambientLight);
 
-const spotLight = new THREE.SpotLight(0xD4FF00, 10); // Vibrant high-intensity Volt spotlight
-spotLight.position.set(2.0, 7.0, 3.0);
-spotLight.angle = 0.18; // Tightened beam
+const spotLight = new THREE.SpotLight(0xD4FF00, 12); // High-voltage Volt spotlight beam
+spotLight.position.set(1.5, 6.0, 3.5);
+spotLight.angle = 0.20; // Tight focused spotlight cone
 spotLight.penumbra = 0.9;
 spotLight.castShadow = true;
 spotLight.shadow.mapSize.width = 2048;
@@ -246,32 +247,30 @@ spotLight.shadow.bias = -0.0001;
 spotLight.shadow.radius = 4;
 scene.add(spotLight);
 
-const pointLight = new THREE.PointLight(0x1C162E, 6, 20); // Bruised Indigo purple fill light
-pointLight.position.set(-2, -1.0, 1.0);
+const pointLight = new THREE.PointLight(0x1C162E, 8, 15); // Bruised Indigo shadow fill
+pointLight.position.set(-2, -1.0, 1.5);
 scene.add(pointLight);
 
 // ==========================================
-// 5. LIQUID GLASS LOGO MESH
+// 5. LIQUID CHROME LOGO TYPOGRAPHY
 // ==========================================
-// We build the word "CHITH" out of 3D brutalist ebonized glass boxes
 const logoGlassMesh = new THREE.Group();
-const glassWarpMaterial = new THREE.ShaderMaterial({
+const chromeMaterial = new THREE.ShaderMaterial({
   uniforms: {
     uTime: { value: 0.0 },
     uMouseVelocity: { value: new THREE.Vector2(0, 0) },
     uSolidifyProgress: { value: 0.0 }
   },
-  vertexShader: glassWarpVert,
-  fragmentShader: glassWarpFrag,
+  vertexShader: chromeWarpVert,
+  fragmentShader: chromeWarpFrag,
   transparent: true,
   depthWrite: true
 });
 
-// Helper to add box blocks representing letters of "CHITH"
+// Helper to build brutalist block letters for "CHITH STUDIOS"
 function createBrutalistLetters() {
-  const blockGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+  const blockGeo = new THREE.BoxGeometry(0.04, 0.04, 0.04);
   
-  // Grid layout matrices for each letter (height 5, width 3)
   const lettersGrid = {
     'C': [
       [1,1,1],
@@ -300,27 +299,54 @@ function createBrutalistLetters() {
       [0,1,0],
       [0,1,0],
       [0,1,0]
+    ],
+    'S': [
+      [1,1,1],
+      [1,0,0],
+      [1,1,1],
+      [0,0,1],
+      [1,1,1]
+    ],
+    'U': [
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,1]
+    ],
+    'D': [
+      [1,1,0],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,0]
+    ],
+    'O': [
+      [1,1,1],
+      [1,0,1],
+      [1,0,1],
+      [1,0,1],
+      [1,1,1]
     ]
   };
 
-  const letterSpacing = 0.7;
-  const word = ['C', 'H', 'I', 'T', 'H'];
+  const word = ['C', 'H', 'I', 'T', 'H', 'space', 'S', 'T', 'U', 'D', 'I', 'O', 'S'];
+  const letterSpacing = 0.23; // Tight tracking
   const startX = -((word.length - 1) * letterSpacing) / 2;
 
   word.forEach((char, letterIdx) => {
-    const grid = lettersGrid[char === 'H' && letterIdx === 4 ? 'H' : char];
+    if (char === 'space') return;
+    const grid = lettersGrid[char];
     const xOffset = startX + letterIdx * letterSpacing;
 
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 3; c++) {
         if (grid[r][c] === 1) {
-          const block = new THREE.Mesh(blockGeo, glassWarpMaterial);
-          // Scale blocks slightly inward to look like stacked glass tiles
+          const block = new THREE.Mesh(blockGeo, chromeMaterial);
           block.scale.set(0.9, 0.9, 0.9);
-          // Position relative to letter center
           block.position.set(
-            xOffset + (c - 1) * 0.12,
-            0.8 - (r - 2) * 0.12, // Move above bench
+            xOffset + (c - 1) * 0.04,
+            0.55 - (r - 2) * 0.04, // Offset center y
             0
           );
           block.castShadow = true;
@@ -333,30 +359,28 @@ function createBrutalistLetters() {
 }
 
 createBrutalistLetters();
-// Position logo above bench and scale down to hide it initially
-logoGlassMesh.position.set(0, 0.5, 0.2);
-logoGlassMesh.scale.set(0.001, 0.001, 0.001);
+logoGlassMesh.position.set(0, 0.65, 0.1);
+logoGlassMesh.scale.set(0.001, 0.001, 0.001); // Hidden initially, scaled on scroll
 scene.add(logoGlassMesh);
 
 // ==========================================
-// 6. PROCEDURAL BRUTALIST PARK BENCH MODEL
+// 6. DEFORMED WOOD BENCH & SHADOW FLOOR
 // ==========================================
 const benchGroup = new THREE.Group();
 
-// Dark weathered high-contrast ink materials
 const concreteLegMat = new THREE.MeshStandardMaterial({
-  color: 0x050508, // Darkest charcoal void
+  color: 0x050508, // Cast iron ebonized supports
   roughness: 0.95,
-  metalness: 0.8 // Cast iron feel
+  metalness: 0.8
 });
 
 const woodSlatMat = new THREE.MeshStandardMaterial({
-  color: 0x0A0B0E, // Ebonized charcoal wood
-  roughness: 0.90,
-  metalness: 0.70
+  color: 0xFAF9F6, // Alabaster Bone painted slats
+  roughness: 0.70,
+  metalness: 0.1
 });
 
-// Left & Right concrete supports (heavy slabs)
+// Concrete support legs
 const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.8, 0.8), concreteLegMat);
 legL.position.set(-1.0, 0, 0);
 legL.castShadow = true;
@@ -369,159 +393,252 @@ legR.receiveShadow = true;
 
 benchGroup.add(legL, legR);
 
-// Bench wood slats
+// Wood seat and backrest slats (Warped/Deformed in center)
 const slatsCount = 5;
 const slatW = 2.4;
 const slatH = 0.04;
 const slatD = 0.08;
 
+// Create deforming geometries using Gaussian profiles
+const seatSlatGeo = new THREE.BoxGeometry(slatW, slatH, slatD, 40, 1, 1);
+const seatPos = seatSlatGeo.attributes.position;
+for (let v = 0; v < seatPos.count; v++) {
+  const vx = seatPos.getX(v);
+  const vy = seatPos.getY(v);
+  // Deform top and bottom vertices in center smoothly
+  const sag = -0.15 * Math.exp(-Math.pow(vx, 2) / 0.12);
+  seatPos.setY(v, vy + sag);
+}
+seatSlatGeo.computeVertexNormals();
+
+const backSlatGeo = new THREE.BoxGeometry(slatW, slatD, slatH, 40, 1, 1);
+const backPos = backSlatGeo.attributes.position;
+for (let v = 0; v < backPos.count; v++) {
+  const vx = backPos.getX(v);
+  const vy = backPos.getY(v);
+  const sag = -0.12 * Math.exp(-Math.pow(vx, 2) / 0.12);
+  backPos.setY(v, vy + sag);
+}
+backSlatGeo.computeVertexNormals();
+
 for (let i = 0; i < slatsCount; i++) {
   // Seat Slats
-  const seatSlat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, slatD), woodSlatMat);
+  const seatSlat = new THREE.Mesh(seatSlatGeo, woodSlatMat);
   seatSlat.position.set(0, 0.2, -0.2 + i * 0.11);
   seatSlat.castShadow = true;
   seatSlat.receiveShadow = true;
   benchGroup.add(seatSlat);
 
   // Backrest Slats
-  const backSlat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatD, slatH), woodSlatMat);
+  const backSlat = new THREE.Mesh(backSlatGeo, woodSlatMat);
   backSlat.position.set(0, 0.4 + i * 0.10, -0.38);
   backSlat.castShadow = true;
   backSlat.receiveShadow = true;
   benchGroup.add(backSlat);
 }
 
-// Center the bench
 benchGroup.position.set(0, -0.3, 0);
 scene.add(benchGroup);
 
-// Ground floor to receive Bruised Indigo shadows
+// Shadow plane
 const floorGeo = new THREE.PlaneGeometry(20, 20);
-const floorMat = new THREE.ShadowMaterial({ color: 0x1C162E, opacity: 0.9 });
+const floorMat = new THREE.ShadowMaterial({ color: 0x1C162E, opacity: 0.90 }); // Bruised Indigo shadows
 const floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotation.x = -Math.PI / 2;
-floor.position.y = -0.7; // Just below bench supports
+floor.position.y = -0.7;
 floor.receiveShadow = true;
 scene.add(floor);
 
 // ==========================================
-// 7. PARTICLE SYSTEM (CURL-NOISE SMOKE & LOGO CONVERGENCE)
+// 7. VISCOUS NEON FLUID RIBBONS (SPLINES)
 // ==========================================
-const particleCount = 2000;
-const particleGeometry = new THREE.BufferGeometry();
-const particlePositions = new Float32Array(particleCount * 3);
-const particleTargets = new Float32Array(particleCount * 3);
-const particleSeeds = new Float32Array(particleCount);
-
-// Extract logo block target coordinates
-const logoBlocks = [];
-logoGlassMesh.children.forEach((block) => {
-  logoBlocks.push(block.position);
+const fluidGroup = new THREE.Group();
+const fluidMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0.0 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: fluidFlowFrag,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide
 });
 
-// Distribute particles along the bench seat & backrest cracks
-for (let i = 0; i < particleCount; i++) {
-  const isSeatCrack = Math.random() > 0.4;
-  let px = 0, py = 0, pz = 0;
+// Generate 3 splines winding up from the bench center
+const splinesCount = 3;
+const ribbonMeshes = [];
+for (let s = 0; s < splinesCount; s++) {
+  const points = [];
+  const pointsCount = 40;
+  const radius = 0.055;
   
-  if (isSeatCrack) {
-    const crackIdx = Math.floor(Math.random() * 4);
-    px = (Math.random() - 0.5) * 2.2;
-    py = 0.2;
-    pz = -0.2 + crackIdx * 0.11 + 0.055;
-  } else {
-    const crackIdx = Math.floor(Math.random() * 4);
-    px = (Math.random() - 0.5) * 2.2;
-    py = 0.4 + crackIdx * 0.10 + 0.05;
-    pz = -0.38;
+  for (let i = 0; i < pointsCount; i++) {
+    const t = i / (pointsCount - 1);
+    const angle = t * Math.PI * 4.5 + s * (Math.PI * 2.0 / 3.0);
+    // Winding path rising upwards from melted slat center
+    const px = Math.sin(angle) * (0.05 + t * 0.7);
+    const py = -0.1 + t * 4.0;
+    const pz = Math.cos(angle) * (0.05 + t * 0.7) + (t * 0.2);
+    
+    points.push(new THREE.Vector3(px, py, pz));
   }
   
-  // Convert to world space relative to benchGroup
-  particlePositions[i * 3] = px;
-  particlePositions[i * 3 + 1] = py - 0.3; // Bench group y offset
-  particlePositions[i * 3 + 2] = pz;
-  
-  particleSeeds[i] = Math.random() * 100.0;
-
-  // Assign convergence targets matching letters coordinates (scaled up to match logo final scale 1.4)
-  if (logoBlocks.length > 0) {
-    const targetBlock = logoBlocks[i % logoBlocks.length];
-    particleTargets[i * 3] = targetBlock.x * 1.4 + logoGlassMesh.position.x + (Math.random() - 0.5) * 0.04;
-    particleTargets[i * 3 + 1] = targetBlock.y * 1.4 + logoGlassMesh.position.y + (Math.random() - 0.5) * 0.04;
-    particleTargets[i * 3 + 2] = targetBlock.z * 1.4 + logoGlassMesh.position.z + (Math.random() - 0.5) * 0.04;
-  } else {
-    particleTargets[i * 3] = 0;
-    particleTargets[i * 3 + 1] = 0.5;
-    particleTargets[i * 3 + 2] = 0.2;
-  }
+  const curve = new THREE.CatmullRomCurve3(points);
+  const tubeGeo = new THREE.TubeGeometry(curve, 64, radius, 8, false);
+  const tubeMesh = new THREE.Mesh(tubeGeo, fluidMaterial);
+  tubeMesh.scale.set(0.001, 0.001, 0.001); // Hidden initially
+  fluidGroup.add(tubeMesh);
+  ribbonMeshes.push(tubeMesh);
 }
+scene.add(fluidGroup);
 
+// ==========================================
+// 8. WAVEFORM LINE PLANE
+// ==========================================
+const waveGeo = new THREE.PlaneGeometry(8, 2.5);
+const waveMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0.0 },
+    uScrollVelocity: window.chithShaderUniforms.uScrollVelocity
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform float uScrollVelocity;
+    varying vec2 vUv;
+    
+    void main() {
+      float x = vUv.x;
+      float y = vUv.y - 0.5;
+      
+      // Amplitude increases with scroll velocity
+      float amp = 0.15 + uScrollVelocity * 0.7;
+      float waveVal = sin(x * 38.0 - uTime * 4.0) * cos(x * 14.0) * amp;
+      
+      // Fade edges
+      float edgeFade = smoothstep(0.0, 0.25, x) * smoothstep(1.0, 0.75, x);
+      
+      // Draw thin glowing line
+      float lineDist = abs(y - waveVal);
+      float glow = exp(-lineDist * 35.0);
+      
+      gl_FragColor = vec4(0.831, 1.000, 0.000, glow * edgeFade * 0.85); // Volt Lime
+    }
+  `,
+  transparent: true,
+  depthWrite: false
+});
+const waveMesh = new THREE.Mesh(waveGeo, waveMaterial);
+waveMesh.position.set(0, 0.05, -0.6); // Behind bench
+scene.add(waveMesh);
+
+// ==========================================
+// 9. FLOATING VOLT LIME CURSORS
+// ==========================================
+const cursorGroup = new THREE.Group();
+const cursorGeo = new THREE.BufferGeometry();
+const cursorVertices = new Float32Array([
+  0.0, 0.0, 0.0,
+  0.08, -0.16, 0.0,
+  0.02, -0.13, 0.0,
+  0.02, -0.13, 0.0,
+  0.08, -0.16, 0.0,
+  0.0, -0.20, 0.0
+]);
+cursorGeo.setAttribute('position', new THREE.BufferAttribute(cursorVertices, 3));
+const cursorMat = new THREE.MeshBasicMaterial({ color: 0xD4FF00, side: THREE.DoubleSide });
+
+const cursorsList = [];
+for (let i = 0; i < 4; i++) {
+  const cMesh = new THREE.Mesh(cursorGeo, cursorMat);
+  cMesh.scale.set(0.7, 0.7, 0.7);
+  // Random coordinates
+  const rx = (Math.random() - 0.5) * 3.5;
+  const ry = -0.2 + (Math.random() - 0.5) * 1.5;
+  const rz = 0.5 + (Math.random() - 0.5) * 1.0;
+  cMesh.position.set(rx, ry, rz);
+  cMesh.rotation.z = -0.3 + Math.random() * 0.6;
+  
+  cursorGroup.add(cMesh);
+  cursorsList.push({
+    mesh: cMesh,
+    baseX: rx,
+    baseY: ry,
+    baseZ: rz,
+    speed: 0.6 + Math.random() * 0.8
+  });
+}
+scene.add(cursorGroup);
+
+// ==========================================
+// 10. PARTICLE SYSTEM (CURL-NOISE EMISSION FALLBACK)
+// ==========================================
+const particleCount = 600;
+const particleGeometry = new THREE.BufferGeometry();
+const particlePositions = new Float32Array(particleCount * 3);
+const particleSeeds = new Float32Array(particleCount);
+
+for (let i = 0; i < particleCount; i++) {
+  particlePositions[i * 3] = (Math.random() - 0.5) * 2.2;
+  particlePositions[i * 3 + 1] = 0.1 - 0.3; // Slat cracks
+  particlePositions[i * 3 + 2] = -0.2 + Math.random() * 0.4;
+  particleSeeds[i] = Math.random() * 100.0;
+}
 particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-particleGeometry.setAttribute('aTarget', new THREE.BufferAttribute(particleTargets, 3));
 particleGeometry.setAttribute('aSeed', new THREE.BufferAttribute(particleSeeds, 1));
 
-// Custom ShaderMaterial with Curl-Noise and Convergence Interpolation
 const particleMaterial = new THREE.ShaderMaterial({
   uniforms: {
     uEruptionProgress: { value: 0.0 },
-    uConvergenceProgress: { value: 0.0 },
     uTime: { value: 0.0 }
   },
   vertexShader: `
     uniform float uEruptionProgress;
-    uniform float uConvergenceProgress;
     uniform float uTime;
-    attribute vec3 aTarget;
     attribute float aSeed;
     varying float vOpacity;
     
-    // Simplex/Perlin noise approximation (swirling vector field)
-    vec3 curlNoise(vec3 p, float t, float seed) {
-      vec3 res;
-      res.x = sin(p.y * 2.5 + t + seed) * cos(p.z * 2.0 + t);
-      res.y = sin(p.z * 2.5 + t + seed) * cos(p.x * 2.0 + t) * 1.4;
-      res.z = sin(p.x * 2.5 + t + seed) * cos(p.y * 2.0 + t);
-      return res;
-    }
-
     void main() {
       vec3 pos = position;
+      float t = uTime * 0.8 + aSeed;
+      pos.x += sin(pos.y * 3.0 + t) * uEruptionProgress * 0.3;
+      pos.y += uEruptionProgress * (1.5 + fract(aSeed * 0.2) * 2.0);
+      pos.z += cos(pos.x * 3.0 + t) * uEruptionProgress * 0.3;
       
-      // Swirling rising smoke movement based on time and seed
-      vec3 curl = curlNoise(pos, uTime * 1.4, aSeed);
-      vec3 swirlingPos = pos + curl * uEruptionProgress * 1.2;
-      swirlingPos.y += uEruptionProgress * (2.8 + fract(aSeed * 0.1) * 4.0);
-      
-      // Convergence interpolation (mix swirling smoke coordinates with logo letter coordinates)
-      vec3 finalPos = mix(swirlingPos, aTarget, uConvergenceProgress);
-      
-      vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
       gl_Position = projectionMatrix * mvPosition;
-      
-      // Particle sizing based on camera perspective and drift pulse
-      gl_PointSize = (14.0 / -mvPosition.z) * (1.0 + sin(uTime * 4.0 + aSeed) * 0.25);
-      vOpacity = mix(0.7, 0.9, uConvergenceProgress);
+      gl_PointSize = (10.0 / -mvPosition.z);
+      vOpacity = (1.0 - uEruptionProgress * 0.7);
     }
   `,
   fragmentShader: `
     varying float vOpacity;
     void main() {
-      // Soft circles volt lime particles
       float dist = distance(gl_PointCoord, vec2(0.5));
       if (dist > 0.5) discard;
-      gl_FragColor = vec4(0.831, 1.000, 0.000, vOpacity); // Volt Lime #D4FF00
+      gl_FragColor = vec4(0.831, 1.000, 0.000, vOpacity * 0.5);
     }
   `,
   transparent: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending
+  depthWrite: false
 });
-
 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
 scene.add(particleSystem);
 
 // ==========================================
-// 8. EFFECT COMPOSER (POST-PROCESSING)
+// 11. EFFECT COMPOSER (POST-PROCESSING)
 // ==========================================
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
@@ -541,7 +658,7 @@ const distortionPass = new ShaderPass(distortionShader);
 composer.addPass(distortionPass);
 
 // ==========================================
-// 9. GSAP SCROLL HERO PIN TIMELINE
+// 12. GSAP SCROLL HERO PIN TIMELINE
 // ==========================================
 const heroTimeline = gsap.timeline({
   scrollTrigger: {
@@ -553,18 +670,18 @@ const heroTimeline = gsap.timeline({
   }
 });
 
-// Segment 1: Camera tracking-pan upward and particle curl-noise eruption (0% -> 40%)
-heroTimeline.to(camera.position, { x: 0.0, y: 2.5, z: 4.0, ease: "power1.inOut" }, 0)
-            .to(particleMaterial.uniforms.uEruptionProgress, { value: 1.0, ease: "power1.inOut" }, 0);
+// Segment 1: Camera pan, fluid ribbons grow scale, and particles erupt (0% -> 40%)
+heroTimeline.to(camera.position, { x: 0.0, y: 2.2, z: 4.0, ease: "power1.inOut" }, 0)
+            .to(particleMaterial.uniforms.uEruptionProgress, { value: 1.0, ease: "power1.inOut" }, 0)
+            .to(ribbonMeshes.map(m => m.scale), { x: 1.0, y: 1.0, z: 1.0, ease: "power2.inOut" }, 0);
 
-// Segment 2: Particles converge to logo, camera ascends, glass logo solidifies and header fades in (40% -> 80%)
-heroTimeline.to(camera.position, { y: 4.8, z: 2.2, ease: "power1.inOut" }, 1)
-            .to(particleMaterial.uniforms.uConvergenceProgress, { value: 1.0, ease: "power2.inOut" }, 1)
-            .to(glassWarpMaterial.uniforms.uSolidifyProgress, { value: 1.0, ease: "power2.out" }, 1)
-            .to(logoGlassMesh.scale, { x: 1.4, y: 1.4, z: 1.4, ease: "power2.out" }, 1)
+// Segment 2: Fluid loops converge, camera ascends, chrome logo solidifies and header fades in (40% -> 80%)
+heroTimeline.to(camera.position, { y: 4.2, z: 2.5, ease: "power1.inOut" }, 1)
+            .to(chromeMaterial.uniforms.uSolidifyProgress, { value: 1.0, ease: "power2.out" }, 1)
+            .to(logoGlassMesh.scale, { x: 1.35, y: 1.35, z: 1.35, ease: "power2.out" }, 1)
             .to("#monumental-header-layer", { opacity: 0.9, ease: "power2.out" }, 1);
 
-// Segment 3: Glass logo rotates in focus and content sections show (80% -> 100%)
+// Segment 3: Chrome logo spins in final focus and content sections show (80% -> 100%)
 heroTimeline.to(logoGlassMesh.rotation, { y: Math.PI * 2, ease: "power2.inOut" }, 2)
             .to("#manifesto-trigger-layer", { opacity: 1, y: 0, ease: "power2.out" }, 2);
 
@@ -896,9 +1013,17 @@ function animate() {
   
   // Pipe parameters to shaders uniforms
   window.chithShaderUniforms.uTime.value = AppState.time;
-  glassWarpMaterial.uniforms.uTime.value = AppState.time;
-  glassWarpMaterial.uniforms.uMouseVelocity.value.copy(AppState.mouseVelocity);
+  chromeMaterial.uniforms.uTime.value = AppState.time;
+  chromeMaterial.uniforms.uMouseVelocity.value.copy(AppState.mouseVelocity);
   particleMaterial.uniforms.uTime.value = AppState.time;
+  fluidMaterial.uniforms.uTime.value = AppState.time;
+  waveMaterial.uniforms.uTime.value = AppState.time;
+  
+  // Drift cursors slowly
+  cursorsList.forEach((c) => {
+    c.mesh.position.x = c.baseX + Math.sin(AppState.time * c.speed) * 0.15;
+    c.mesh.position.y = c.baseY + Math.cos(AppState.time * c.speed) * 0.15;
+  });
   
   // WebGL off-screen culling checks
   // If hero container is completely scrolled past, turn off 3D updates to save GPU cycles
