@@ -63,13 +63,13 @@
 
 /* Perception Engine styles */
 .perception-distort {
-  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), filter 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform, filter;
+  filter: url(#svg-distort-filter);
 }
 
 .perception-distort.is-intoxicated {
   transform: skewX(var(--distortion-shear, 12deg)) scaleY(var(--distortion-scale, 1.05));
-  filter: blur(var(--distortion-blur, 3px));
   transition: none; /* Instant shift during high speed action */
 }
 
@@ -118,4 +118,9 @@
 
 .glitch-flicker {
   animation: textFlicker 0.45s infinite;
+}
+
+.blend-chrome {
+  mix-blend-mode: color-dodge;
+  text-shadow: 0 0 35px rgba(212, 255, 0, 0.15);
 }
