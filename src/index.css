@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,900;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-chithVoid text-chithBone font-brutal selection:bg-chithVolt selection:text-chithVoid overflow-x-hidden;
+    background-color: #0A0B0E; /* Fallback */
+    margin: 0;
+  }
+}
+
+/* Custom Typography Engine rules from taste.md */
+.font-brutal-header {
+  font-family: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+}
+
+.font-brutal-body {
+  font-family: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  max-width: 65ch;
+}
+
+.font-mono-metric {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  color: rgba(250, 249, 246, 0.5); /* color-bone at 50% */
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0B0E;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C162E;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4FF00;
+}
+
+/* Camera viewport framing guide overlay (1px bone color at 10% opacity) */
+.camera-framing-border {
+  border: 1px solid rgba(250, 249, 246, 0.10);
+  pointer-events: none;
+}
+
+.camera-guide-line {
+  background-color: rgba(250, 249, 246, 0.10);
+  pointer-events: none;
+}
+
+/* Perception Engine styles */
+.perception-distort {
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), filter 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform, filter;
+}
+
+.perception-distort.is-intoxicated {
+  transform: skewX(var(--distortion-shear, 12deg)) scaleY(var(--distortion-scale, 1.05));
+  filter: blur(var(--distortion-blur, 3px));
+  transition: none; /* Instant shift during high speed action */
+}
+
+/* Kinetic Grain Overlay */
+.cinema-grain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Preloader styles */
+#preloader {
+  z-index: 10000;
+  background-color: #0A0B0E;
+}
+
+/* Custom Asymmetric Layout grid values */
+.grid-cols-chith {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+/* Text glitch flicker keyframes */
+@keyframes textFlicker {
+  0% { opacity: 0.98; }
+  10% { opacity: 0.3; }
+  11% { opacity: 1; }
+  25% { opacity: 0.9; }
+  26% { opacity: 0.1; }
+  28% { opacity: 1; }
+  60% { opacity: 0.95; }
+  61% { opacity: 0.4; }
+  62% { opacity: 1; }
+  80% { opacity: 0.99; }
+  81% { opacity: 0.2; }
+  82% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.glitch-flicker {
+  animation: textFlicker 0.45s infinite;
+}

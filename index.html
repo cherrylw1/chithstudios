@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHITH STUDIOS — FROM THE BENCH TO THE SCREEN</title>
+  <meta name="description" content="Independent cinema born from total chaos, executed with cold mathematical precision. Atmospheric, visceral, psychological spaces.">
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+<body class="bg-chithVoid text-chithBone select-none">
+  <!-- Kinetic Grain Overlay -->
+  <div class="cinema-grain" id="grain-overlay"></div>
+
+  <!-- Camera Viewport Framing Guide Overlay -->
+  <div class="fixed inset-0 pointer-events-none z-50 flex flex-col justify-between p-4 md:p-8 camera-framing-border m-4 md:m-8">
+    <!-- Top Row Camera Guides -->
+    <div class="flex justify-between items-start font-mono-metric text-xs uppercase">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-chithVolt animate-ping"></span>
+        <span>REC [•]</span>
+      </div>
+      <div>35MM ANAMORPHIC</div>
+      <div id="camera-timecode">TC 09:02:58:00</div>
+    </div>
+    
+    <!-- Crosshairs & Grid Intersections -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="w-6 h-px camera-guide-line"></div>
+      <div class="h-6 w-px camera-guide-line absolute"></div>
+    </div>
+
+    <!-- Bottom Row Camera Guides -->
+    <div class="flex justify-between items-end font-mono-metric text-xs uppercase">
+      <div>FPS 24.00</div>
+      <div>SHUTTER 180°</div>
+      <div>ISO 800</div>
+    </div>
+  </div>
+
+  <!-- Frame 1: Fullscreen Preloader Lifecycle Layer -->
+  <div id="preloader" class="fixed inset-0 flex flex-col justify-between p-8 md:p-16 pointer-events-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-start w-full">
+      <div class="font-mono-metric text-xs">CHITH // BOOT_SEQUENCE</div>
+      <div class="font-mono-metric text-xs" id="preloader-date">SYS_INIT_2026.07.04</div>
+    </div>
+    
+    <!-- Preloader Three.js Sphere Container -->
+    <div class="absolute inset-0 flex items-center justify-center" id="preloader-sphere-container">
+      <!-- 3D Canvas will be injected here for preloader sphere shatter -->
+    </div>
+
+    <!-- Footer Status Indicators -->
+    <div class="w-full flex flex-col md:flex-row justify-between items-end gap-4 z-10">
+      <div class="max-w-md font-mono-metric text-[10px] leading-relaxed text-left opacity-70">
+        <div>[SYS_INFO] COMPILING LIQUID GLASS LOGO SHADER... DONE</div>
+        <div>[SYS_INFO] CACHING CHROMATIC ABERRATION BUFFER... DONE</div>
+        <div id="preloader-status-stream">[SYS_INFO] DOWNLOADING ASSETS: 0%</div>
+      </div>
+      <div class="text-right">
+        <div class="font-brutal-header text-6xl md:text-8xl tracking-tighter" id="preloader-percentage">000</div>
+        <div class="font-mono-metric text-xs mt-2">INITIALIZING AUDIO-VISUAL PHYSICS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Persistent Fullscreen WebGL Canvas Layer in background -->
+  <div class="fixed inset-0 z-0 pointer-events-none" id="webgl-canvas-container"></div>
+
+  <!-- Smooth scroll content container managed by Lenis -->
+  <div id="smooth-scroll-wrapper" class="relative z-10 w-full overflow-y-auto">
+    
+    <!-- Frame 2 & 3: Pinned Hero 3D Environment Container (300vh) -->
+    <section id="hero-3d-pin-container" class="relative w-full h-[300vh] flex flex-col justify-end">
+      <!-- Trigger Content Layer Layer -->
+      <div id="manifesto-trigger-layer" class="absolute bottom-0 left-0 w-full p-8 md:p-24 pb-[20vh] opacity-0 translate-y-[30px] transition-all duration-700 pointer-events-none">
+        <div class="max-w-3xl">
+          <div class="font-mono-metric text-xs mb-4">CHITH STUDIOS // THE BENCH</div>
+          <h1 class="font-brutal-header text-5xl md:text-8xl mb-8 select-text">
+            FROM THE BENCH TO THE SCREEN.
+          </h1>
+          <p class="font-mono-metric text-sm text-chithBone/60 select-text">
+            SCROLL DOWN TO DETONATE
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scrollable content sections over the fixed WebGL canvas -->
+    <div class="relative w-full bg-transparent">
+      
+      <!-- Frame 3: The Manifesto Section -->
+      <section id="manifesto-section" class="w-full py-[20vh] px-8 md:px-24 flex items-center justify-start border-b border-chithBone/10">
+        <div class="w-full grid-cols-chith grid">
+          <div class="col-span-12 md:col-span-8 md:col-start-2 flex flex-col gap-8 perception-distort" id="manifesto-distort">
+            <div class="font-mono-metric text-xs">FRAME_003 // SPECIFICATIONS</div>
+            <h2 class="font-brutal-header text-4xl md:text-7xl">CHITH // 001</h2>
+            <div class="font-brutal-body text-lg md:text-xl text-chithBone/90 flex flex-col gap-6 select-text">
+              <p>
+                We are a collective of cinephiles in our late 20s who spent too many nights on broken park benches, doing absolutely nothing but talking about movies. No industry connections. No studio backing. Just an aggressive obsession with the medium and a shared pocket of pooled cash.
+              </p>
+              <p>
+                CHITH is our state of being. Obliterated by the weight of storytelling. Wrecked by the frames that linger long after the projector bulb goes cold. We don't make safe compromises, and we don't build polite portfolios. We build visceral, atmospheric, psychological spaces.
+              </p>
+              <p>
+                This is independent cinema born from total chaos, executed with cold mathematical precision.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Frame 4 & 5: Content Layer Integration -->
+      <section id="content-split-section" class="w-full min-h-screen py-[20vh] px-8 md:px-24 border-b border-chithBone/10">
+        <div class="w-full flex flex-col md:flex-row gap-16 md:gap-0 items-stretch">
+          <!-- Left Column (50% Width, Padding 8vw) -->
+          <div class="w-full md:w-1/2 md:pl-[8vw] flex flex-col gap-24 perception-distort" id="content-left-distort">
+            
+            <!-- Frame 4: Production Block -->
+            <div class="flex flex-col gap-6">
+              <div class="font-mono-metric text-xs">FRAME_004 // TRACKING</div>
+              <div class="font-mono-metric text-xs text-chithVolt">PRODUCTION_001 // STATUS: IN_DEVELOPMENT</div>
+              <h3 class="font-brutal-header text-3xl md:text-5xl uppercase">[ WORKING TITLE: PHASE SHIFT ]</h3>
+              
+              <table class="font-mono-metric text-xs w-full text-left mt-4 border-t border-chithBone/20">
+                <tbody>
+                  <tr class="border-b border-chithBone/10">
+                    <th class="py-3 font-normal opacity-50">TYPE:</th>
+                    <td class="py-3 text-chithBone">Independent Narrative Short Film</td>
+                  </tr>
+                  <tr class="border-b border-chithBone/10">
+                    <th class="py-3 font-normal opacity-50">MEDIUM:</th>
+                    <td class="py-3 text-chithBone">35mm Anamorphic Emulation</td>
+                  </tr>
+                  <tr class="border-b border-chithBone/10">
+                    <th class="py-3 font-normal opacity-50">LOGLINE:</th>
+                    <td class="py-3 text-chithBone font-brutal-body select-text text-chithBone/80 normal-case tracking-normal">
+                      A psychological descent into the architecture of isolation, tracking a single character trapped inside a recurring sequence of altered perceptions.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Frame 5: Collective Team Structure -->
+            <div class="flex flex-col gap-6">
+              <div class="font-mono-metric text-xs">FRAME_005 // ROSTER</div>
+              <div class="font-mono-metric text-xs uppercase">COLLECTIVE MEMBERS:</div>
+              
+              <div class="border-t border-chithBone/20 pt-4">
+                <div class="font-mono-metric text-sm font-bold text-chithBone">01 // THE CORE ARCHITECTS</div>
+                <ul class="font-mono-metric text-xs mt-4 flex flex-col gap-2 opacity-80 list-none pl-0">
+                  <li>-&gt; THE CINEPHILES FROM THE BENCH.</li>
+                  <li>-&gt; ROLE: UNCOMPROMISING EXECUTION, SCREENWRITING, DIRECTION, VISUAL DESIGN.</li>
+                  <li>-&gt; ORIGIN: BENGALURU, INDIA.</li>
+                </ul>
+              </div>
+            </div>
+            
+          </div>
+
+          <!-- Right Column (50% Width, Active 2D Canvas) -->
+          <div class="w-full md:w-1/2 flex items-center justify-center relative min-h-[400px] md:min-h-auto">
+            <div class="w-full max-w-lg aspect-square camera-framing-border relative flex items-center justify-center overflow-hidden bg-chithVoid/80">
+              <!-- Pixel Shredder Active 2D Canvas -->
+              <canvas id="pixel-shredder-canvas" class="w-full h-full absolute inset-0 z-10"></canvas>
+              
+              <!-- Backing technical display grid -->
+              <div class="absolute inset-0 grid grid-cols-6 grid-rows-6 opacity-20 pointer-events-none">
+                <div class="border-r border-b border-chithBone/30"></div>
+                <div class="border-r border-b border-chithBone/30"></div>
+                <div class="border-r border-b border-chithBone/30"></div>
+                <div class="border-r border-b border-chithBone/30"></div>
+                <div class="border-r border-b border-chithBone/30"></div>
+                <div class="border-b border-chithBone/30"></div>
+              </div>
+              <div class="font-mono-metric text-[10px] absolute bottom-4 right-4 z-20 text-chithVolt/60">
+                ACTIVE 2D VECTOR FILTER BUFFER
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Frame 6: Liquid Footer Physics Execution -->
+      <footer id="contact-footer" class="w-full min-h-[80vh] flex flex-col justify-between p-8 md:p-24 relative overflow-hidden bg-chithVoid">
+        <div class="font-mono-metric text-xs">FRAME_006 // COMMUNICATIONS</div>
+        
+        <div class="my-auto py-16 flex flex-col items-center justify-center w-full relative z-10">
+          <div class="font-mono-metric text-xs mb-4 opacity-50">DETONATE CORRESPONDENCE</div>
+          
+          <!-- Liquid Footer Canvas to render pixel-melt text -->
+          <div class="relative w-full max-w-4xl h-24 md:h-32 flex items-center justify-center">
+            <canvas id="footer-liquid-canvas" class="absolute inset-0 w-full h-full cursor-pointer"></canvas>
+            <!-- Screen readers fallback link -->
+            <a href="mailto:hello@chithstudios.com" class="sr-only">hello@chithstudios.com</a>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-t border-chithBone/10 pt-8 font-mono-metric text-xs opacity-50">
+          <div>© 2026 CHITH STUDIOS. ALL DIRECTIVES DEFIANT.</div>
+          <div>BENGALURU, IN // GLOBAL INTELLECT</div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
